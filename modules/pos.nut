@@ -60,35 +60,43 @@
 class Pos
 {
     VERSION = 1.0
-    pos_debug = true
+    pos_debug = false
     xconv = 1
     yconv = 1
     nostretch_xconv = 1
     nostretch_yconv = 1
     pos_scale = "stretch"
-
+    pos_layout_width = 640.0
+    pos_layout_height = 480.0
+    pos_base_width = 640.0
+    pos_base_height = 480.0
+    pos_rotate = 0
+    charsize_conv = 1
+    width_to_height_ratio = 1
+    font_scale = 1
+    
     constructor( properties )
     {
         foreach(key, value in properties) {
             try {
                 switch (key) {
                     case "base_width":
-                        ::Posdata.base_width = value.tofloat()
+                        pos_base_width = value.tofloat()
                         break
                     case "base_height":
-                        ::Posdata.base_height = value.tofloat()
+                        pos_base_height = value.tofloat()
                         break
                     case "layout_width":
-                        ::Posdata.layout_width = value.tofloat()
+                        pos_layout_width = value.tofloat()
                         break
                     case "layout_height":
-                        ::Posdata.layout_height = value.tofloat()
+                        pos_layout_height = value.tofloat()
                         break
                     case "rotate":
-                        ::Posdata.rotate = value.tofloat()
+                        pos_rotate = value.tofloat()
                         break
                     case "scale":
-                        switch(::Posdata.scale){
+                        switch(value){
                             case "scale": 
                                 pos_scale = "scale"
                                 break
@@ -100,52 +108,65 @@ class Pos
                         }
                         break
                    case "debug":
-                        if (::Posdata.debug=="true"){pos_debug = true }
+                        if (value==true){pos_debug = true }
                         break
                 }
             }
             catch(e) { if (pos_debug) printL("Error setting property: " + key); } 
         }
- 
-        if (::Posdata.rotate.tofloat() != 0)
+            
+        if (pos_rotate.tofloat() != 0)
         {
-            if (::Posdata.rotate==90)
+            local current_rotation = ( ::fe.layout.base_rotation + ::fe.layout.toggle_rotation ) % 4 // find the current rotation
+                
+            if (current_rotation  == 0 ) // only do anything if it's not already rotated
             {
-                ::fe.layout.orient=RotateScreen.Right
-            }
-            else
-            {
-                ::fe.layout.orient=RotateScreen.Left
+                local templayout_w = pos_layout_width
+                local templayout_h = pos_layout_height
+                ::fe.layout.width = pos_layout_width = templayout_h
+                ::fe.layout.height= pos_layout_height = templayout_w
+
+                if (pos_rotate==90)
+                {
+                    //::fe.layout.orient=RotateScreen.Right
+                    ::fe.layout.toggle_rotation = RotateScreen.Right
+                }
+                else
+                {
+                    //::fe.layout.orient=RotateScreen.Left
+                    ::fe.layout.toggle_rotation = RotateScreen.Left
+                }
             }
         }
-        
+
         // width conversion factor
-        xconv = ::Posdata.layout_width / ::Posdata.base_width 
+        xconv = pos_layout_width / pos_base_width 
         nostretch_xconv = xconv
         
         // height conversion factor
-        yconv = ::Posdata.layout_height / ::Posdata.base_height
+        yconv = pos_layout_height / pos_base_height
         nostretch_yconv = yconv
 
-        if (::Posdata.layout_height < ::Posdata.base_height)
+        // width to height
+        width_to_height_ratio = pos_layout_width / pos_layout_height
+        if (width_to_height_ratio <= 1 )
         {
-            nostretch_xconv = yconv
+            charsize_conv = width_to_height_ratio
         }
-        else
-        {
-            nostretch_yconv = xconv
-        }
-
+            
         if (pos_scale=="scale")
         {
-            if (::Posdata.layout_height < ::Posdata.base_height)
+            if (pos_layout_width > pos_layout_height)
             {
                 xconv = yconv 
+                nostretch_xconv = yconv
             }
             else
             {
                 yconv = xconv 
+                nostretch_yconv = xconv
             }
+         
         }
         if (pos_scale=="none")
         {
@@ -154,17 +175,34 @@ class Pos
             nostretch_xconv = 1
             nostretch_yconv = 1
         }
-    }
-    
-    // Print line
-    function printLine(x) {
-        if (pos_debug){
-            print(x + " \n")            
+        if (pos_scale=="stretch")
+        {
+            if (pos_layout_width > pos_layout_height)
+            {
+                nostretch_xconv = yconv
+            }
+            else
+            {
+                nostretch_yconv = xconv
+            }
         }
+        
+        printLine("nostretch_xconv", nostretch_xconv)
+        printLine("nostretch_yconv", nostretch_yconv)
+        printLine("xconv", xconv)
+        printLine("yconv", yconv)
+
     }
-    function printL(x)
-    {
-        printLine(x)
+
+    // Print line
+    function printLine(lineheader, x) {
+        if (pos_debug){
+            if (!lineheader)
+            {
+                lineheader = "key" 
+            }
+            print(lineheader + ": " + x + " \n")            
+        }
     }
 
     // get a width value converted using conversion factor
@@ -174,6 +212,10 @@ class Pos
         if (!allow_stretch)
         {
             return num * nostretch_xconv
+        }
+        else if (allow_stretch == "y")
+        {
+            return num * yconv
         }
         return num * xconv
     }
@@ -186,66 +228,171 @@ class Pos
         {
             return num * nostretch_yconv 
         } 
+        else if (allow_stretch == "x")
+        {
+            return num * xconv
+        }
         return num * yconv
+    }
+    function set_font_height(height, text_object, text_align="TopLeft" , text_margin=0)
+    {
+        if ( typeof text_object == typeof fe.Text())
+        {
+            local gs = height * yconv * charsize_conv
+            text_object.charsize = gs.tointeger()
+                
+            text_object.margin=0
+            if (text_margin){
+                 text_object.margin=text_margin
+            }   
+            switch (text_align) {
+                case "TopCentre":
+                   text_object.align = Align.TopCentre 
+                    break
+                case "TopRight":
+                   text_object.align = Align.TopRight 
+                    break
+                case "Left":
+                   text_object.align = Align.Left 
+                    break
+                case "Centre":
+                   text_object.align = Align.Centre 
+                    break
+                case "Right":
+                   text_object.align = Align.Right 
+                    break
+                case "BottomLeft":
+                   text_object.align = Align.BottomLeft 
+                    break
+                case "BottomCentre":
+                   text_object.align = Align.BottomCentre 
+                    break
+                case "BottomRight":
+                   text_object.align = Align.BottomRight 
+                    break
+               default:
+                    text_object.align = Align.TopLeft
+            }
+
+        }
+    }
+    function font_height(num, text_object=null)
+    {
+        local gs = num * yconv * charsize_conv
+        return gs.tointeger()
     }
 
     /* 
     get x position converted to a scaled value using conversion factor
     
-    use anchor="right" to offset the left edge (num) pixels from right side of screen
+    use anchor="right" to offset the left edge from the width 
     combine with object_width to offset the right edge of the object (num) pixels from right side of screen
     */ 
-    function x( num, anchor="left", object_width=0)
-    {
-        if (pos_scale=="stretch" || pos_scale=="none")
-        {
-            return num * xconv
-        }
-        else
-        {
-            if (anchor == "left")
-            {
-                return num * xconv
-            }
-            else
-            {
-                local page_width_difference = 0; 
-                if (::Posdata.base_width > ::Posdata.layout_width)
-                {
-                    page_width_difference = ::Posdata.base_width - Posdata.layout_width
-                }
-                return (::Posdata.layout_width - (object_width * xconv)-(num * xconv) - page_width_difference) 
-            }
-        }
-    } 
-
-    /* 
-    get y position converted to a scaled value using conversion factor
     
-    use anchor="bottom" to offset the top edge (num) pixels from bottom side of screen
-    combine with object_height to offset the bottom edge of the object (num) pixels from bottom side of screen
-    */ 
-    function y( num, anchor="top", object_height=0 )
+    function x( num, anchor="left", object = null, object_container=null )
     {
-        if (pos_scale=="stretch")
+        local object_width = 1
+        local object_container_x = 0 
+        local object_container_width = 1
+        
+        if (object != null &&  typeof object !="float" && typeof object !="integer")
         {
-            return num * yconv 
+            try {
+                object_width = object.width
+            }
+            catch (e) {
+                //
+            }
         }
-        else
+        else if (object != null)
         {
-            if (anchor == "top")
-            {
-                return num * yconv
+            object_width = object.tofloat()
+        }
+        
+        
+        if (object_container != null && typeof object_container !="float" && typeof object_container !="integer")
+        {
+            try {
+                object_container_x = object_container.x
+                object_container_width = object_container.width
             }
-            else
-            {
-                local page_height_difference = 0; 
-                if (::Posdata.base_height > ::Posdata.layout_height)
-                {
-                    page_height_difference = ::Posdata.base_height - Posdata.layout_height
-                }
-                return (::Posdata.layout_height - (object_height * yconv)-(num * yconv) - page_height_difference) 
+            catch (e) {
+                //
             }
+        }
+        else if (object != null)
+        {
+            object_container_x = object_container.tofloat()
+        }
+        
+        if (anchor == "right")
+        {
+            return (object_container_width + object_container_x - object_width) - (num * xconv)
+        }
+        else if (anchor == "middle")
+        {
+            printLine("object_container", object_container_x)
+            printLine("object_width", object_width)
+            printLine("xconv", xconv)
+            return (object_container_width/2) + object_container_x - (object_width / 2) + (num*xconv) 
+        }
+        else 
+        {
+           return num * xconv
         }
     }
+    
+    function y( num, anchor="top", object = null, object_container=null )
+    {
+        local object_height = 1
+        local object_container_y = 0 
+        local object_container_height = 1
+        
+        if (object != null &&  typeof object !="float" && typeof object !="integer")
+        {
+            try {
+                object_height = object.height
+            }
+            catch (e) {
+                //
+            }
+        }
+        else if (object != null)
+        {
+            object_height = object.tofloat()
+        }
+        
+        
+        if (object_container != null && typeof object_container !="float" && typeof object_container !="integer")
+        {
+            try {
+                object_container_y = object_container.y
+                object_container_height = object_container.height
+            }
+            catch (e) {
+                //
+            }
+        }
+        else if (object != null)
+        {
+            object_container_y = object_container.tofloat()
+        }
+        
+        if (anchor == "bottom")
+        {
+            return (object_container_height + object_container_y - object_height) - (num * yconv)
+        }
+        else if (anchor == "middle")
+        {
+            printLine("object_container", object_container_y)
+            printLine("object_height", object_height)
+            printLine("yconv", yconv)
+            return (object_container_height/2) + object_container_y - (object_height / 2) + (num*yconv) 
+        }
+        else 
+        {
+           return num * yconv
+        }
+    }
+    
 }

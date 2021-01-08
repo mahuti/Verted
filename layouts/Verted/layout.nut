@@ -31,7 +31,8 @@ class UserConfig {
                 options="Yes,No",
                 order=order++ />
                 show_cabinet_tab="Yes";
- /*
+
+    /* this has been disabled, because trying to use it causes a segfault in linux and windows. I'm guessing due to a memory leak
     </ label="Tab Button", 
         help="Button/keypress that used to switch tabs", 
         is_input="yes", 
@@ -56,7 +57,7 @@ class UserConfig {
         dat_path="/home/pi/.attract/mame2003-extras/history.dat";	  
  
      </ label="Scaling", 
-		help="Controls how the layout should be scaled. Stretch will fill the entire space. Scale will scale up/down to fit the space with potential cropping of non-critical elements (eg. backgrounds)", 
+		help="Controls how the flyers & cabinets should be scaled. Stretch will fill the entire space. Scale will scale up/down to fit the space", 
 		options="stretch,scale,none", 
 		order=order++ /> 
 		scale="stretch";
@@ -78,21 +79,9 @@ class UserConfig {
 local config = fe.get_config()
 fe.layout.font = "American Captain"
 
-fe.layout.width=480 
-fe.layout.height=640
-
 local key_state = {}
 
 local dat_path = config["dat_path"] // must be set, even if history.dat's dat_path is set to use within a layout
-
-function dirty_debug( text )
-{
-	local debug_text = fe.add_text(text, pos.x(10), pos.y(200), pos.width(400), pos.height(100));
-	debug_text.align = Align.Left;
-	debug_text.charsize = 20;
-	debug_text.set_rgb(255, 255, 255);
- 	
-}
 
 /* ************************************  
 Module Loading & Instantiating
@@ -102,21 +91,37 @@ fe.load_module("fade")
 fe.load_module("file") 
 fe.load_module("preserve-art")
 fe.load_module("pos") // positioning & scaling module
-    
+
+// stretched positioning
 local posData =  {
     base_width = 480.0,
     base_height = 640.0,
     layout_width = fe.layout.width,
     layout_height = fe.layout.height,
     rotate = config["rotate"], 
-    scale= config["scale"],
+    scale= "stretch",
     debug = false,
 }
+local pos = Pos(posData)
 
-local pos = Pos(posData) 
+// scaled positioning
+local scalePos =  {
+    base_width = 480.0,
+    base_height = 640.0,
+    layout_width = fe.layout.width,
+    layout_height = fe.layout.height,
+    scale= "scale",
+    debug = false,
+}
+local scalepos = Pos(scalePos)
+
+// nothing going in here. just using for positioning & scale for other elements
+local overall_surface = fe.add_surface( pos.width(480), pos.height(640) )
+overall_surface.x= 0
+overall_surface.y= 0
     
 /* ************************************  
-Tab Content defaults
+Tab Defaults
 ************************************ */ 
     
 local show_cab = false 
@@ -145,50 +150,83 @@ local cabinet_available = false
 // basic tab positioning default
 local tab_video_x = 0
 local tab_info_x = 0     
-local tab_info_width = 0 
 local tab_flyer_x = 0  
-local tab_flyer_width = 0 
 local tab_cabinet_x = 0 
-local tab_cabinet_width = 0 
+
 local tab_right_x = 440
-    
-// tab content
+
+local tab_info_width = 0 
+local tab_flyer_width = 0 
+local tab_cabinet_width = 0 
+
+/* ************************************  
+Tab Contents
+************************************ */ 
+
 local vid = fe.add_artwork( "snap", 0, 0, pos.width(480), pos.height(640) )		
         vid.preserve_aspect_ratio = false
         vid.trigger=Transition.EndNavigation
         
-local info = fe.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
+local info = fe.add_image( "black.png", 0, 0, pos.width(452), pos.height(528) )
         info.alpha = 150
         info.x = pos.x(480)
         info.y = pos.y(56)	
 
 // by default, leave the history text off. Need to wait until the history.dat plugin is confirmed as enabled before using
 local info_text = fe.add_text("You must enable History.dat plugin to show history info in this tab", pos.x(480), pos.y(100), pos.width(400), pos.height(440))
-        info_text.charsize = pos.height(14, true)
+        info_text.charsize = pos.font_height(18)
         info_text.align = Align.Left
         info_text.word_wrap = true
         info_text.font = "Metropolis-Regular.otf"
 
 local flyer = fe.add_surface(pos.width(448), pos.height(528))
         flyer.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
-        flyer.add_text( "No flyer available", pos.x(120), pos.y(254), pos.width(208), pos.height(20) )
-        flyer.add_artwork ("flyer", 0, 0, pos.width(448), pos.height(528) )
-        flyer.x = pos.x(480)
-        flyer.y = pos.y(56)
-        flyer.trigger=Transition.EndNavigation
+
+    
+// should we stretch or scale flyers & cabinets? 
+if (config["scale"]=="stretch")
+{
+    local flyerart = flyer.add_artwork ("flyer", 0, 0, pos.width(448), pos.height(528) )
+    flyerart.x = pos.x(0,"middle",flyerart,flyer)
+    flyerart.y = pos.y(0,"middle",flyerart,flyer)    
+}
+else
+{
+    local flyerart = flyer.add_artwork ("flyer", 0, 0, scalepos.width(448), scalepos.height(528) )
+    flyerart.x = scalepos.x(0,"middle",flyerart,flyer)
+    flyerart.y = scalepos.y(0,"middle",flyerart,flyer)   
+}
+    
+flyer.x = pos.x(480)
+flyer.y = pos.y(56)
+flyer.trigger=Transition.EndNavigation
 
 local cabinet = fe.add_surface(pos.width(448), pos.height(528))
-        cabinet.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
-        cabinet.add_text( "No cabinet picture available", pos.x(108), pos.y(254), pos.width(228), pos.height(20) )	
-        cabinet.add_artwork ("cabinet", pos.x(100), pos.y(64), pos.width(248), pos.height(428))
-        cabinet.x = pos.x(480) 
-        cabinet.y = pos.y(56) 
-        cabinet.trigger=Transition.EndNavigation
+cabinet.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
+
+if (config["scale"]=="stretch")
+{
+    local cabinetart = cabinet.add_artwork ("cabinet", pos.x(100), pos.y(64), pos.width(248), pos.height(428) )
+    cabinetart.x = pos.x(0,"middle",cabinetart,cabinet)
+    cabinetart.y = pos.y(26,"middle",cabinetart,cabinet)
+}
+else
+{
+    local cabinetart = cabinet.add_artwork ("cabinet", scalepos.x(100), scalepos.y(64), scalepos.width(248), scalepos.height(428) )
+    cabinetart.x = scalepos.x(0,"middle",cabinetart,cabinet)
+    cabinetart.y = scalepos.y(26,"middle",cabinetart,cabinet)
+}
+
+cabinet.x = pos.x(480) 
+cabinet.y = pos.y(56) 
+cabinet.trigger=Transition.EndNavigation
 
 /* ************************************  
-General Layout
+Very cool, but currently useless trigger 
+functions that can't be used because
+something related to ticks causes a 
+segfault when using this
 ************************************ */ 
- 
 function key_pressed( key )
 {
     if ( fe.get_input_state( key ) && !key_state.rawin( key ))
@@ -208,11 +246,15 @@ function key_update()
     //return false; 
 }
 
+/* ************************************  
+General Layout
+************************************ */ 
+     
 // list box background 
 local shade = fe.add_image( "shade.png", pos.x(-480), 0, pos.width(480), pos.height(640) )        
 local bezel_folder = "bezel/" + config["bezel"] + "/"
 local list_box = fe.add_listbox( pos.x(-405), pos.y(100), pos.width(400), pos.height(440) )
-    list_box.charsize = pos.height(32)
+    list_box.height = pos.font_height(32)
     list_box.set_sel_rgb( 255, 255, 125 )
     list_box.alpha = 75
     list_box.selbg_alpha = 0
@@ -229,24 +271,40 @@ wheel_header.set_fit_or_fill( "fit" )
 wheel_header.set_anchor( ::Anchor.Top )
 
 // Bottom Left Game Details
-local game_details = fe.add_text( "[Year]-[Category]", pos.x(24), pos.y(594), pos.width(170), pos.height(20) )	
-        game_details.align = Align.Left
+function game_details_text(){
+    local game_details_text = ""
+    
+    if( fe.game_info( Info.Year )!="" &&  fe.game_info( Info.Category )!="" )
+    {
+        game_details_text = fe.game_info( Info.Year ) + " - " + fe.game_info( Info.Category )
+    }
+    else if (fe.game_info( Info.Category )!=""){
+        game_details_text = fe.game_info( Info.Category )
+    }
+    else
+    {
+        game_details_text = fe.game_info( Info.Year )
+    }   
+    
+    return game_details_text
+}
+
+local game_details = fe.add_text( "[!game_details_text]", pos.x(24), pos.y(594), pos.width(170), pos.height(20) )	
         game_details.alpha = 120
-        game_details.charsize = pos.height(13)
+        pos.set_font_height(24,game_details, "Left")
 
 // Playcount
 local label_play = fe.add_text("PLAYED [PlayedCount] TIME(S)",pos.x(208),pos.y(592), pos.width(140), pos.height(24) )
-        label_play.align = Align.Left
-        label_play.charsize = pos.height(14)
+        pos.set_font_height(24,label_play, "Left")
         label_play.alpha = 120
 
 // Play Now!
 local label_play2 = fe.add_text("PLAY NOW!!!",pos.x(368),pos.y(592), pos.width(130),pos.height(24))
-        label_play2.align = Align.Left
-        label_play2.charsize = pos.height(14)
+label_play2.x = pos.x(40,"right",label_play2,overall_surface)
+        pos.set_font_height(24,label_play2, "Right")
 
 // Player 1 Button
-local	player_1_button = fe.add_image("player_1_button.png", pos.x(318), pos.y(595), pos.width(27), pos.height(27))
+local player_1_button = PreserveArt( "player_1_button.png", pos.x(310), pos.y(595), pos.width(27), pos.height(27) )
         player_1_button.alpha = 255
 
 local tab = fe.add_image(bezel_folder + "tab.png",pos.x(tab_video_x),pos.y(550),pos.width(68), pos.height(35)) 
@@ -256,22 +314,24 @@ local label_flyer = fe.add_text("FLYER",pos.x(tab_flyer_x),pos.y(552),pos.width(
 local label_cabinet = fe.add_text("CABINET ",pos.x(tab_cabinet_x),pos.y(552),pos.width(76),pos.height(30)) 
 
 // Alphabet Progress Bar
-local list_inc = pos.height(416.0) / pos.height((fe.list.size-1)) 
+local list_inc = pos.y(416.0) / pos.y((fe.list.size-1)) 
 local current_pos = pos.y(64) + (fe.list.index * list_inc) 
 local list_pos_image = fe.add_image( bezel_folder +  "circle.png", pos.x(15) , pos.y(current_pos), pos.width(48), pos.height(48) ) 
 
+ // getting the first letter of the game title
 function alphafirst(){
   return fe.game_info( Info.Title ).slice(0,1)
 }
 
-local list_label = fe.add_text( "[!alphafirst]", pos.x(13), pos.y(current_pos+pos.height(12)), pos.width(24), pos.height(20) ) 
+local list_label = fe.add_text( "[!alphafirst]", pos.x(18), pos.y(current_pos+pos.y(13)), pos.width(18), pos.height(22) ) 
+pos.set_font_height(24,list_label, "Centre")
 
 /*
 // show marquee on second monitor. I have NO idea if this works because I can't test it. 
 if ( config["show_marquee_on_second_monitor"] == "Yes" )
 {
     local marquee = fe.add_artwork( "marquee", pos.x(250), pos.y(641), pos.width(1440), pos.height(440) )	
-        /* marquee.rotation = 90  */ 
+        //marquee.rotation = 90 
         marquee.preserve_aspect_ratio = false    
 }
 */ 
@@ -317,7 +377,7 @@ function set_layer_alpha( ttype, var, ttime)
 fe.add_transition_callback( "set_layer_alpha" )	
 
 /* ************************************  
-invaders_init
+verted_init
 transition callback
 
 // This loads information into the 
@@ -329,12 +389,12 @@ from happening when not enabled
 @return false
 ************************************ */ 
     
-function invaders_init( ttype, var, ttime )
+function verted_init( ttype, var, ttime )
 {
     if ( ttype == Transition.StartLayout ){
         if (show_info)
         {
-            // this mdethod does not seem to work in some 
+            // this method does not seem to work in some 
             // of the other transitions
             if ( fe.plugin.rawin( "History.dat" )){
                 if ( config["show_info_tab"] == "Yes" ){
@@ -347,22 +407,23 @@ function invaders_init( ttype, var, ttime )
     return false  
 } 
 
-fe.add_transition_callback( "invaders_init")
+fe.add_transition_callback( "verted_init")
 
 /* ************************************  
-progress bar
+progress bar for Alphabet list
 transition callback
 
-moves the INITIAL of the game on the left side
+moves the INITIAL of the game on the left side in the alphabet list
 
 @return false
 ************************************ */ 
     
 function progress_bar( ttype, var, ttime )			
 {
-    current_pos = pos.height(90) + pos.height((fe.list.index*list_inc))
-    list_pos_image.y = pos.y(current_pos)
-    list_label.y = pos.y(current_pos+pos.height(12))	
+    current_pos = fe.list.index*list_inc
+    list_pos_image.y = pos.y(current_pos + 90)
+    list_label.y = pos.y(-3,"middle", list_label, list_pos_image)	
+    
     return false 
 }
 fe.add_transition_callback( "progress_bar" )
@@ -498,7 +559,7 @@ plays the info tab, hides the games list
 function play_info_tab()
 {
      hide_games_list()
-    PropertyAnimation(info).key("x").from(pos.x(480)).to(pos.x(16)).duration(slide_time).easing("ease-in-out-circle").play()
+    PropertyAnimation(info).key("x").from(pos.x(480)).to(pos.x(12)).duration(slide_time).easing("ease-in-out-circle").play()
     PropertyAnimation(info_text).key("x").from(pos.x(480)).to(pos.x(44)).duration(slide_time).easing("ease-in-out-circle").on("stop", function(anim) { key_update(); }).play()
     PropertyAnimation(tab).key("x").to(pos.x(tab_info_x)).duration(slide_time).easing("ease-in-out-circle").play()
 
@@ -578,14 +639,14 @@ function show_games_list()
     }
     return false
 }
-/* when up / down is pressed and a tab other than "video" is shown, this reset the view to the video tab */ 
 
 /* ************************************  
 tab_slider_reset
 signal handler
 
 when up/down are selected, video tab is played
-and other tabs are hidden
+and other tabs are hidden to reset the view
+to the video tab
 
 @return false
 ************************************ */
@@ -609,10 +670,12 @@ tab_slider
 signal handler
 
 when custom1 is pressed, info tabs are shuffled
+slide between video/info/flyer/cabinet 
+if they're available
 
 @return false
 ************************************ */
-function tab_slider( signal_str )					// slide between video / info / flyer / cabinet view when Custom1 is pressed
+function tab_slider( signal_str )					
 {
     if ((signal_str=="custom1")) 
     {
@@ -641,7 +704,12 @@ changes tabs on configured keypress
 @return false
 ************************************ */
 
-// local tabkey = config["key"]; 
+local tabkey = null
+    
+if ("key" in config)
+{
+  tabkey = config["key"]; 
+}
 
 function check_key ( ttime )
 {
@@ -727,7 +795,7 @@ if ( show_info ){
 tab_info_x = tab_right_x - tab_info_x  
 tab_cabinet_x = tab_right_x - tab_cabinet_x  
 tab_flyer_x = tab_right_x - tab_flyer_x  
-tab_video_x = tab_right_x - tab_cabinet_width - tab_flyer_width - tab_info_width - 60  
+tab_video_x = tab_right_x - tab_cabinet_width - tab_flyer_width - tab_info_width - 60 
 
 // if the tab isn't to be shown, set the x pos off screen
 if (show_cab== false){
@@ -746,24 +814,18 @@ label_info.set_pos( pos.x(tab_info_x), pos.y(550))
 label_flyer.set_pos( pos.x(tab_flyer_x), pos.y(550))
 label_cabinet.set_pos( pos.x(tab_cabinet_x), pos.y(550))
 
-label_video.charsize=pos.height(16)  
-label_video.align = Align.Centre  
+pos.set_font_height(22,label_video,"Centre")
+   
+pos.set_font_height(22,label_info, "Centre")
 
-label_info.charsize=pos.height(16)  
-label_info.align = Align.Centre  
+pos.set_font_height(22,label_flyer,"Centre")
 
-label_flyer.charsize=pos.height(16) 
-
-label_flyer.align = Align.Centre 
-
-label_cabinet.charsize=pos.height(16) 
-label_cabinet.align = Align.Centre 
+pos.set_font_height(22,label_cabinet, "Centre")
 
 // initiate games list now, if it's available to be shown
 show_games_list()
 
-// fe.add_ticks_callback("check_key"); // had to disable because it keeps segfaulting. why? noooo idea. 
+// fe.add_ticks_callback("check_key"); // had to disable because it keeps segfaulting. why? noooo idea. maybe memory leak?
 fe.add_signal_handler("tab_slider_reset")
 fe.add_signal_handler( "tab_slider" ) 
-
-
+    
