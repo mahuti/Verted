@@ -114,12 +114,10 @@ class Pos
             }
             catch(e) { if (pos_debug) printL("Error setting property: " + key); } 
         }
-            
+
         if (pos_rotate.tofloat() != 0)
         {
-            local current_rotation = ( ::fe.layout.base_rotation + ::fe.layout.toggle_rotation ) % 4 // find the current rotation
-                
-            if (current_rotation  == 0 ) // only do anything if it's not already rotated
+            if (::fe.layout.orient  == 0 ) // only do anything if it's not already rotated
             {
                 local templayout_w = pos_layout_width
                 local templayout_h = pos_layout_height
@@ -128,13 +126,11 @@ class Pos
 
                 if (pos_rotate==90)
                 {
-                    //::fe.layout.orient=RotateScreen.Right
-                    ::fe.layout.toggle_rotation = RotateScreen.Right
+                    ::fe.layout.orient=RotateScreen.Right
                 }
                 else
                 {
-                    //::fe.layout.orient=RotateScreen.Left
-                    ::fe.layout.toggle_rotation = RotateScreen.Left
+                    ::fe.layout.orient=RotateScreen.Left
                 }
             }
         }
@@ -238,10 +234,9 @@ class Pos
     {
         if ( typeof text_object == typeof fe.Text())
         {
-            local gs = height * yconv * charsize_conv
-            text_object.charsize = gs.tointeger()
-                
+            text_object.charsize = charsize(height)
             text_object.margin=0
+            
             if (text_margin){
                  text_object.margin=text_margin
             }   
@@ -273,10 +268,10 @@ class Pos
                default:
                     text_object.align = Align.TopLeft
             }
-
         }
+        return false
     }
-    function font_height(num, text_object=null)
+    function charsize(num)
     {
         local gs = num * yconv * charsize_conv
         return gs.tointeger()
@@ -293,7 +288,8 @@ class Pos
     {
         local object_width = 1
         local object_container_x = 0 
-        local object_container_width = 1
+        local object_container_width = ::fe.layout.width
+        anchor = anchor.tolower()
         
         if (object != null &&  typeof object !="float" && typeof object !="integer")
         {
@@ -301,7 +297,7 @@ class Pos
                 object_width = object.width
             }
             catch (e) {
-                //
+                printLine("object is: ", typeof object)
             }
         }
         else if (object != null)
@@ -317,7 +313,7 @@ class Pos
                 object_container_width = object_container.width
             }
             catch (e) {
-                //
+                printLine("object container is: ", typeof object_container)
             }
         }
         else if (object != null)
@@ -329,7 +325,7 @@ class Pos
         {
             return (object_container_width + object_container_x - object_width) - (num * xconv)
         }
-        else if (anchor == "middle")
+        else if (anchor == "middle" || anchor == "centre")
         {
             printLine("object_container", object_container_x)
             printLine("object_width", object_width)
@@ -346,7 +342,8 @@ class Pos
     {
         local object_height = 1
         local object_container_y = 0 
-        local object_container_height = 1
+        local object_container_height = ::fe.layout.height
+        anchor = anchor.tolower()
         
         if (object != null &&  typeof object !="float" && typeof object !="integer")
         {
@@ -354,7 +351,7 @@ class Pos
                 object_height = object.height
             }
             catch (e) {
-                //
+                printLine("object is: ", typeof object)
             }
         }
         else if (object != null)
@@ -370,7 +367,7 @@ class Pos
                 object_container_height = object_container.height
             }
             catch (e) {
-                //
+                printLine("object_container_y is: ", typeof object_container_y)
             }
         }
         else if (object != null)
@@ -382,7 +379,7 @@ class Pos
         {
             return (object_container_height + object_container_y - object_height) - (num * yconv)
         }
-        else if (anchor == "middle")
+        else if (anchor == "middle" || anchor=="centre")
         {
             printLine("object_container", object_container_y)
             printLine("object_height", object_height)
