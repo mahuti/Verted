@@ -13,6 +13,8 @@ This layout is based off of a previous theme called "The Invaders", though large
 
 2. You'll need to have artwork set up for the following: cabinet, flyer, marquee, snap, wheel
 
+3. To use the History/Info tab, take a look at the setup instructions under the "Show History Info Tab" instructions below
+
 ## Options
 
 ### Show Games list
