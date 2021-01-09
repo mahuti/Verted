@@ -55,7 +55,7 @@ This sets the colors for the bezel and the tabs. The bezel is the image that wra
 When set to yes, the play now graphic will pulse
 
 ### Scaling
-Controls how the layout should be scaled. Stretch will fill the entire space. Scale will scale up/down to fit the space with potential cropping. 
+Controls how the cabinets & flyer art should be scaled. Stretch will fill the entire space. Scale will scale up/down to fit the space. 
 
 ### Rotate
 Controls how the layout should be rotated
