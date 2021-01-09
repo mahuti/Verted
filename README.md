@@ -42,15 +42,15 @@ Enabled by default
 
 If enabled, shows the Cabinets tab
 
-### Bezel Style/Color
+#### Bezel Style/Color
 This sets the colors for the bezel and the tabs. The bezel is the image that wraps around the snap image. 
 
-### Blink the PLAY NOW graphic
+#### Blink the PLAY NOW graphic
 When set to yes, the play now graphic will pulse
 
-### Scaling
+#### Scaling
 Controls how the layout should be scaled. Stretch will fill the entire space. Scale will scale up/down to fit the space with potential cropping. 
 
-### Rotate
+#### Rotate
 Controls how the layout should be rotated
   
