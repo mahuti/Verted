@@ -174,7 +174,7 @@ local info = fe.add_image( "black.png", 0, 0, pos.width(452), pos.height(528) )
 
 // by default, leave the history text off. Need to wait until the history.dat plugin is confirmed as enabled before using
 local info_text = fe.add_text("You must enable History.dat plugin to show history info in this tab", pos.x(480), pos.y(100), pos.width(400), pos.height(440))
-        info_text.charsize = pos.font_height(18)
+        info_text.charsize = pos.charsize(18)
         info_text.align = Align.Left
         info_text.word_wrap = true
         info_text.font = "Metropolis-Regular.otf"
@@ -254,7 +254,7 @@ General Layout
 local shade = fe.add_image( "shade.png", pos.x(-480), 0, pos.width(480), pos.height(640) )        
 local bezel_folder = "bezel/" + config["bezel"] + "/"
 local list_box = fe.add_listbox( pos.x(-405), pos.y(100), pos.width(400), pos.height(440) )
-    list_box.height = pos.font_height(32)
+    list_box.charsize = pos.charsize(32)
     list_box.set_sel_rgb( 255, 255, 125 )
     list_box.alpha = 75
     list_box.selbg_alpha = 0
@@ -302,10 +302,10 @@ local label_play = fe.add_text("PLAYED [PlayedCount] TIME(S)",pos.x(208),pos.y(5
 local label_play2 = fe.add_text("PLAY NOW!!!",pos.x(368),pos.y(592), pos.width(130),pos.height(24))
 label_play2.x = pos.x(40,"right",label_play2,overall_surface)
         pos.set_font_height(24,label_play2, "Right")
+        label_play2.alpha = 120
 
 // Player 1 Button
-local player_1_button = PreserveArt( "player_1_button.png", pos.x(310), pos.y(595), pos.width(27), pos.height(27) )
-        player_1_button.alpha = 255
+local player_1_button = fe.add_image( "player_1_button.png",pos.x(325),pos.y(595),scalepos.width(27), scalepos.height(27)) 
 
 local tab = fe.add_image(bezel_folder + "tab.png",pos.x(tab_video_x),pos.y(550),pos.width(68), pos.height(35)) 
 local label_video = fe.add_text("VIDEO",pos.x(tab_video_x),pos.y(552),pos.width(68),pos.height(30)) 
@@ -529,7 +529,6 @@ available
 ************************************ */
 function play_video_tab()
 {
-    
     if (info.x < pos.x(400))
     {
         PropertyAnimation(info).key("x").from(pos.x(16)).to(pos.x(480)).duration(slide_time).easing("ease-in-out-circle").play() 
@@ -544,7 +543,7 @@ function play_video_tab()
         PropertyAnimation(cabinet).key("x").from(pos.x(16)).to(pos.x(480)).duration(slide_time).easing("ease-in-out-circle").play() 
     }
         
-    PropertyAnimation(tab).key("x").to(pos.x(tab_video_x)).duration(slide_time).easing("ease-in-out-circle").on("stop", function(anim) { key_update(); show_games_list(); }).play()
+    PropertyAnimation(tab).key("x").to(pos.x(tab_video_x)).duration(slide_time).easing("ease-in-out-circle").on("stop", function(anim) { key_update();}).play()
         
     return false
 }
@@ -558,7 +557,7 @@ plays the info tab, hides the games list
 ************************************ */
 function play_info_tab()
 {
-     hide_games_list()
+
     PropertyAnimation(info).key("x").from(pos.x(480)).to(pos.x(12)).duration(slide_time).easing("ease-in-out-circle").play()
     PropertyAnimation(info_text).key("x").from(pos.x(480)).to(pos.x(44)).duration(slide_time).easing("ease-in-out-circle").on("stop", function(anim) { key_update(); }).play()
     PropertyAnimation(tab).key("x").to(pos.x(tab_info_x)).duration(slide_time).easing("ease-in-out-circle").play()
@@ -575,7 +574,7 @@ plays the flyer tab, hides the games list
 ************************************ */
 function play_flyer_tab()
 {
-   hide_games_list()
+
        
    PropertyAnimation(flyer).key("x").from(pos.x(480)).to(pos.x(16)).duration(slide_time).easing("ease-in-out-circle").on("stop", function(anim) { key_update(); }).play()
    PropertyAnimation(tab).key("x").to(pos.x(tab_flyer_x)).duration(slide_time).easing("ease-in-out-circle").play()
@@ -592,7 +591,7 @@ plays the cabinet tab, hides the games list
 ************************************ */
 function play_cabinet_tab()
 { 
-    hide_games_list()
+
     PropertyAnimation(cabinet).key("x").from(pos.x(480)).to(pos.x(16)).duration(slide_time).easing("ease-in-out-circle").on("stop", function(anim) { key_update(); }).play()
     PropertyAnimation(tab).key("x").to(pos.x(tab_cabinet_x)).duration(slide_time).easing("ease-in-out-circle").play()
         
@@ -613,7 +612,7 @@ function hide_games_list()
        if(list_box.x > 0)
        {
            PropertyAnimation(list_box).key("x").from(pos.x(44)).to(pos.x(-405)).duration(slide_time).easing("ease-in-out-circle").play()   
-            PropertyAnimation(shade).key("x").from(0).to(pos.x(-480)).duration(slide_time).easing("ease-in-out-circle").play() 
+           PropertyAnimation(shade).key("x").from(0).to(pos.x(-480)).duration(slide_time).easing("ease-in-out-circle").play() 
 
        }
     }
@@ -633,8 +632,8 @@ function show_games_list()
     {                    
        if(list_box.x < 0)
        {
-            PropertyAnimation(list_box).key("x").from(pos.x(-405)).to(pos.x(44)).duration(slide_time).easing("ease-in-out-circle").play() 
-            PropertyAnimation(shade).key("x").from(pos.x(-480)).to(0).duration(slide_time).easing("ease-in-out-circle").play() 
+            PropertyAnimation(list_box).key("x").from(pos.x(-405)).to(pos.x(44)).duration("200ms").easing("ease-in-out-circle").play() 
+            PropertyAnimation(shade).key("x").from(pos.x(-480)).to(0).duration("200ms").easing("ease-in-out-circle").play() 
        }
     }
     return false
@@ -655,9 +654,6 @@ function tab_slider_reset( signal_str )
 {
     if ((signal_str=="up"||signal_str=="down")) 
     {        
-        //local sound = fe.add_sound("game.mp3")
-	    //sound.playing=true
-            
         if (info_view !=0)
         {
             play_video_tab()
@@ -679,6 +675,8 @@ function tab_slider( signal_str )
 {
     if ((signal_str=="custom1")) 
     {
+        hide_games_list()
+        
         info_view = next_tab()  
         if (info_view==1) {
             play_info_tab()
@@ -691,6 +689,7 @@ function tab_slider( signal_str )
         }
         else {
             play_video_tab()
+            show_games_list()
         }
     }	
     return false 
