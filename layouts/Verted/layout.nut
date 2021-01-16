@@ -179,46 +179,61 @@ local info_text = fe.add_text("You must enable History.dat plugin to show histor
         info_text.word_wrap = true
         info_text.font = "Metropolis-Regular.otf"
 
-local flyer = fe.add_surface(pos.width(448), pos.height(528))
-        flyer.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
+
+local flyer = null
 
     
 // should we stretch or scale flyers & cabinets? 
 if (config["scale"]=="stretch")
 {
+    flyer = fe.add_surface(pos.width(448), pos.height(528))
+    flyer.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
     local flyerart = flyer.add_artwork ("flyer", 0, 0, pos.width(448), pos.height(528) )
     flyerart.x = pos.x(0,"middle",flyerart,flyer)
     flyerart.y = pos.y(0,"middle",flyerart,flyer)    
+    flyer.x = pos.x(480)
+    flyer.y = pos.y(56)
 }
 else
 {
+    flyer = fe.add_surface(pos.width(448), pos.height(528))
+    flyer.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
     local flyerart = flyer.add_artwork ("flyer", 0, 0, scalepos.width(448), scalepos.height(528) )
     flyerart.x = scalepos.x(0,"middle",flyerart,flyer)
     flyerart.y = scalepos.y(0,"middle",flyerart,flyer)   
+    flyerart.preserve_aspect_ratio = true; 
+    flyer.x = pos.x(480)
+    flyer.y = pos.y(56)
 }
     
-flyer.x = pos.x(480)
-flyer.y = pos.y(56)
+
 flyer.trigger=Transition.EndNavigation
 
-local cabinet = fe.add_surface(pos.width(448), pos.height(528))
-cabinet.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
+local cabinet = null
 
 if (config["scale"]=="stretch")
 {
-    local cabinetart = cabinet.add_artwork ("cabinet", pos.x(100), pos.y(64), pos.width(248), pos.height(428) )
+    cabinet = fe.add_surface(pos.width(448), pos.height(528))
+    cabinet.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
+    local cabinetart = cabinet.add_artwork ("cabinet", pos.x(100), pos.y(64), pos.width(448), pos.height(428) )
     cabinetart.x = pos.x(0,"middle",cabinetart,cabinet)
     cabinetart.y = pos.y(26,"middle",cabinetart,cabinet)
+    cabinet.x = pos.x(480) 
+    cabinet.y = pos.y(56) 
 }
 else
 {
-    local cabinetart = cabinet.add_artwork ("cabinet", scalepos.x(100), scalepos.y(64), scalepos.width(248), scalepos.height(428) )
+    cabinet = fe.add_surface(pos.width(448), pos.height(528))
+    cabinet.add_image( "black.png", 0, 0, pos.width(448), pos.height(528) )
+    local cabinetart = cabinet.add_artwork ("cabinet", scalepos.x(100), scalepos.y(64), scalepos.width(448), scalepos.height(428) )
+    cabinetart.preserve_aspect_ratio = true; 
     cabinetart.x = scalepos.x(0,"middle",cabinetart,cabinet)
     cabinetart.y = scalepos.y(26,"middle",cabinetart,cabinet)
+    cabinet.x = pos.x(480) 
+    cabinet.y = pos.y(56) 
 }
 
-cabinet.x = pos.x(480) 
-cabinet.y = pos.y(56) 
+
 cabinet.trigger=Transition.EndNavigation
 
 /* ************************************  
