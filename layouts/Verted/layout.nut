@@ -100,7 +100,7 @@ local posData =  {
     layout_height = fe.layout.height,
     rotate = config["rotate"], 
     scale= "stretch",
-    debug = false,
+    debug = true,
 }
 local pos = Pos(posData)
 
@@ -111,7 +111,7 @@ local scalePos =  {
     layout_width = fe.layout.width,
     layout_height = fe.layout.height,
     scale= "scale",
-    debug = false,
+    debug = true,
 }
 local scalepos = Pos(scalePos)
 
@@ -315,7 +315,7 @@ local label_play = fe.add_text("PLAYED [PlayedCount] TIME(S)",pos.x(208),pos.y(5
 
 // Play Now!
 local label_play2 = fe.add_text("PLAY NOW!!!",pos.x(368),pos.y(592), pos.width(130),pos.height(24))
-label_play2.x = pos.x(40,"right",label_play2,overall_surface)
+label_play2.x = pos.x(-40,"right",label_play2)
         pos.set_font_height(24,label_play2, "Right")
         label_play2.alpha = 120
 
@@ -331,15 +331,17 @@ local label_cabinet = fe.add_text("CABINET ",pos.x(tab_cabinet_x),pos.y(552),pos
 // Alphabet Progress Bar
 local list_inc = pos.y(416.0) / pos.y((fe.list.size-1)) 
 local current_pos = pos.y(64) + (fe.list.index * list_inc) 
-local list_pos_image = fe.add_image( bezel_folder +  "circle.png", pos.x(15) , pos.y(current_pos), pos.width(48), pos.height(48) ) 
+local list_pos_image = fe.add_image( bezel_folder +  "circle.png", pos.x(17) , pos.y(current_pos), scalepos.width(48), scalepos.height(48) ) 
 
  // getting the first letter of the game title
 function alphafirst(){
   return fe.game_info( Info.Title ).slice(0,1)
 }
 
-local list_label = fe.add_text( "[!alphafirst]", pos.x(18), pos.y(current_pos+pos.y(13)), pos.width(18), pos.height(22) ) 
-pos.set_font_height(24,list_label, "Centre")
+local list_label = fe.add_text( "[!alphafirst]", pos.x(18), pos.y(current_pos+pos.y(13)), scalepos.width(18), scalepos.height(22) ) 
+pos.set_font_height(24,list_label, "Top")
+list_label.x = scalepos.x(8,"left", list_label, list_pos_image)	
+
 
 /*
 // show marquee on second monitor. I have NO idea if this works because I can't test it. 
@@ -436,9 +438,8 @@ moves the INITIAL of the game on the left side in the alphabet list
 function progress_bar( ttype, var, ttime )			
 {
     current_pos = fe.list.index*list_inc
-    list_pos_image.y = pos.y(current_pos + 90)
-    list_label.y = pos.y(-3,"middle", list_label, list_pos_image)	
-    
+    list_pos_image.y = scalepos.y(current_pos + 90)
+    list_label.y = scalepos.y(3,"middle", list_label, list_pos_image)	
     return false 
 }
 fe.add_transition_callback( "progress_bar" )
@@ -836,10 +837,9 @@ pos.set_font_height(22,label_flyer,"Centre")
 
 pos.set_font_height(22,label_cabinet, "Centre")
 
-// initiate games list now, if it's available to be shown
-show_games_list()
-
 // fe.add_ticks_callback("check_key"); // had to disable because it keeps segfaulting. why? noooo idea. maybe memory leak?
 fe.add_signal_handler("tab_slider_reset")
 fe.add_signal_handler( "tab_slider" ) 
-    
+
+// initiate games list now, if it's available to be shown
+show_games_list()

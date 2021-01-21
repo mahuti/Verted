@@ -7,7 +7,10 @@ history.dat code: http://forum.attractmode.org/index.php?topic=643.0
 This layout will scale to any size, but is intended for use on vertical cabinets. This theme includes tabs to show snaps, flyers, cabinets, and history info (requires history.dat plugin be installed, configured, and enabled)
 
 This layout is based off of a previous theme called "The Invaders", though largely uses different code. Primary differences from the original include bug fixes, the ability to show or hide the games list, improved tab interface, dynamic scaling, and selectable colors for bezel and tabs. 
-## Requirements
+
+### Requires: 
+- Pos module https://github.com/mahuti/Pos-Module
+- animate2 module (included)
 
 1. Add the animate2 and pos modules to AttractMode's modules folder
 
